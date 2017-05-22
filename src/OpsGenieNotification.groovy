@@ -44,7 +44,7 @@ class DEFAULTS {
     static String OPSGENIE_URL = "https://api.opsgenie.com/v1/json/alert"
     static String MESSAGE_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\"'
     static String ALIAS_TEMPLATE = '${job.execid}'
-    static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] "${job.name}" run by ${job.user} (#${job.execid}) [${job.href}]'
+    static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]'
     static String TEAMS_TEMPLATE = ''
     static String SOURCE_TEMPLATE = '${job.href}'
 }

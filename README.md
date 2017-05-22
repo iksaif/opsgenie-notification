@@ -25,24 +25,29 @@ and start using it!
 
 ## Configuration
 
-The plugin only requires the 'service_key' configuration entry. There are two optional configurations if you send requests through an egress proxy.
+The plugin only requires the 'api_key' configuration entry. There are also a few optional configurations.
 
-* service_key: This is the API Key to your service.
+* api_key: This is the API Key to your service.
 
-Configure the service_key in your project configuration by
+Configure the api_key in your project configuration by
 adding an entry like so: $RDECK_BASE/projects/{project}/etc/project.properties
 
-    project.plugin.Notification.OpsGenieNotification.service_key=xx123049e89dd45f28ce35467a08577yz
+    project.plugin.Notification.OpsGenieNotification.api_key=xx123049e89dd45f28ce35467a08577yz
 
 Or configure it at the instance level: $RDECK_BASE/etc/framework.properties
 
-    framework.plugin.Notification.OpsGenieNotification.service_key=xx123049e89dd45f28ce35467a08577yz
+    framework.plugin.Notification.OpsGenieNotification.api_key=xx123049e89dd45f28ce35467a08577yz
 
-* proxy_host (optional): Your egress proxy host.
-* proxy_port: Required if proxy_host is set. The port the network egress proxy accepts traffic on.
 
-These can be configured at the project level. 
-Most likely this needs to be configured at the instance level: $RDECK_BASE/etc/framework.properties
+### All options
 
-    framework.plugin.Notification.OpsGenieNotification.proxy_host=foo.example.net
-    framework.plugin.Notification.OpsGenieNotification.proxy_port=3128
+|Option|Scope|Default|Required|Description|
+|-|-|-|-|-|
+|`api_key`|Any|None|Yes|Integration API Key|
+|`message`|Any|`${job.status} [${job.project}] \"${job.name}\"`|Yes|Message template.|
+|`description`|Any|`${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]`|No|Description template.|
+|`alias`|Any|`'${job.execid}`|No|alias template.|
+|`source`|Any|`${job.href}`|No|Source template.|
+|`teams`|Any|None|No|Teams to redirect the alert to.|
+|`proxy_host`|Project|None|Yes|Your egress proxy host.|
+|`proxy_port`|Project|None|If `proxy_host` is set|the port the network egress proxy accepts traffic on.|
