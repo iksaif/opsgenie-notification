@@ -46,7 +46,7 @@ Or configure it at the instance level: $RDECK_BASE/etc/framework.properties
 |`api_key`|Any|None|Yes|Integration API Key|
 |`message`|Any|`${job.status} [${job.project}] \"${job.name}\"`|Yes|Message template.|
 |`description`|Any|`${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]`|No|Description template.|
-|`alias`|Any|`'${job.execid}`|No|alias template.|
+|`alias`|Any|`${job.project}-${job.name}-${job.execid}-${job.dateStartedUnixTime}`|No|alias template.|
 |`source`|Any|`${job.href}`|No|Source template.|
 |`proxy_host`|Project|None|Yes|Your egress proxy host.|
 |`proxy_port`|Project|None|If `proxy_host` is set|the port the network egress proxy accepts traffic on.|

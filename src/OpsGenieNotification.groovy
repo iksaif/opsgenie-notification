@@ -43,8 +43,8 @@ import com.fasterxml.jackson.databind.JsonNode
 class DEFAULTS {
     static String OPSGENIE_URL = "https://api.opsgenie.com/v1/json/alert"
     static String MESSAGE_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\"'
-    static String ALIAS_TEMPLATE = '${job.execid}'
-    static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]'
+    static String ALIAS_TEMPLATE = '${job.project}-${job.name}-${job.execid}-${job.dateStartedUnixTime}'
+    static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [ ${job.href} ]'
     static String SOURCE_TEMPLATE = '${job.href}'
 }
 
@@ -53,6 +53,7 @@ class DEFAULTS {
  */
 def render(text, binding) {
     //defines the set of tokens usable in the subject configuration property
+    // See http://rundeck.org/docs/developer/notification-plugin.html#execution-data for more.
     def tokens=[
         '${job.status}': binding.execution.status.toUpperCase(),
         '${job.project}': binding.execution.job.project,
@@ -60,7 +61,8 @@ def render(text, binding) {
         '${job.group}': binding.execution.job.group,
         '${job.user}': binding.execution.user,
         '${job.href}': binding.execution.href,
-        '${job.execid}': binding.execution.id.toString()
+        '${job.execid}': binding.execution.id.toString(),
+        '${job.dateStartedUnixTime}': binding.execution.dateStartedUnixtime.toString(),
     ]
     if (text == null) {
       null
