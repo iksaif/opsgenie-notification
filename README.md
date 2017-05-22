@@ -48,6 +48,5 @@ Or configure it at the instance level: $RDECK_BASE/etc/framework.properties
 |`description`|Any|`${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]`|No|Description template.|
 |`alias`|Any|`'${job.execid}`|No|alias template.|
 |`source`|Any|`${job.href}`|No|Source template.|
-|`teams`|Any|None|No|Teams to redirect the alert to.|
 |`proxy_host`|Project|None|Yes|Your egress proxy host.|
 |`proxy_port`|Project|None|If `proxy_host` is set|the port the network egress proxy accepts traffic on.|

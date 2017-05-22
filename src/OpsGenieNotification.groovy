@@ -45,7 +45,6 @@ class DEFAULTS {
     static String MESSAGE_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\"'
     static String ALIAS_TEMPLATE = '${job.execid}'
     static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]'
-    static String TEAMS_TEMPLATE = ''
     static String SOURCE_TEMPLATE = '${job.href}'
 }
 
@@ -63,12 +62,16 @@ def render(text, binding) {
         '${job.href}': binding.execution.href,
         '${job.execid}': binding.execution.id.toString()
     ]
-    text.replaceAll(/(\$\{\S+?\})/){
+    if (text == null) {
+      null
+    } else {
+      text.replaceAll(/(\$\{\S+?\})/){
         if(tokens[it[1]]){
-            tokens[it[1]]
+	  tokens[it[1]]
         } else {
-            it[0]
+	  it[0]
         }
+      }
     }
 }
 
@@ -77,19 +80,17 @@ def render(text, binding) {
  * @param executionData
  * @param configuration
  */
-def triggerEvent(Map executionData, Map configuration) {
+def sendAlert(Map executionData, Map configuration) {
     System.err.println("DEBUG: api_key="+configuration.api_key)
-    def expandedMessage = subjectString(configuration.message, [execution:executionData])
-    def expandedDescription = subjectString(configuration.description, [execution:executionData])
-    def expandedSource = subjectString(configuration.source, [execution:executionData])
-    def expandedTeams = subjectString(configuration.teams, [execution:executionData])
-    def expandedAlias = subjectString(configuration.alias, [execution:executionData])
+    def expandedMessage = render(configuration.message, [execution:executionData])
+    def expandedDescription = render(configuration.description, [execution:executionData])
+    def expandedSource = render(configuration.source, [execution:executionData])
+    def expandedAlias = render(configuration.alias, [execution:executionData])
     def job_data = [
             apiKey: configuration.api_key,
             message: expandedMessage,
             description: expandedDescription,
             source: expandedSource,
-            teams: expandedTeams,
             alias: expandedAlias,
             details:[
                     job: executionData.job.name,
@@ -116,7 +117,9 @@ def triggerEvent(Map executionData, Map configuration) {
     connection.doOutput = true
     def writer = new OutputStreamWriter(connection.outputStream)
     def json = new ObjectMapper()
-    writer.write(json.writeValueAsString(job_data))
+    def raw_data = json.writeValueAsString(job_data)
+    System.err.println("DEBUG: request: " + raw_data)
+    writer.write(raw_data)
     writer.flush()
     writer.close()
     connection.connect()
@@ -133,18 +136,16 @@ def triggerEvent(Map executionData, Map configuration) {
 
 
 rundeckPlugin(NotificationPlugin){
-    title="opsgenie"
-    description="Create a Trigger event."
+    title="OpsGenie"
+    description="Create an alert."
     configuration{
-        subject title:"Message", description:"Message. Can contain \${job.status}, \${job.project}, \${job.name}, \${job.group}, \${job.user}, \${job.execid}", defaultValue:DEFAULTS.MESSAGE_TEMPLATE,required:true
+        message title:"Message", description:"Message. Can contain \${job.status}, \${job.project}, \${job.name}, \${job.group}, \${job.user}, \${job.execid}", defaultValue:DEFAULTS.MESSAGE_TEMPLATE,required:true
 
         description title:"Description", description:"Description.", defaultValue:DEFAULTS.DESCRIPTION_TEMPLATE,required:false
 
         alias title:"Alias", description:"Alias.", defaultValue:DEFAULTS.ALIAS_TEMPLATE,required:false
 
         source title:"Source", description:"Source.", defaultValue:DEFAULTS.SOURCE_TEMPLATE,required:false
-
-        teams title:"Teams", description:"Teams.", defaultValue:DEFAULTS.TEAMS_TEMPLATE,required:false
 
         api_key title:"Integration API Key", description:"The API key", scope:"Project"
 
@@ -153,16 +154,16 @@ rundeckPlugin(NotificationPlugin){
         proxy_port title:"Proxy port", description:"Outbound proxy port", scope:"Project", defaultValue:null, required:false
     }
     onstart { Map executionData,Map configuration ->
-        triggerEvent(executionData, configuration)
+        sendAlert(executionData, configuration)
         true
     }
     onfailure { Map executionData, Map configuration ->
-        triggerEvent(executionData, configuration)
+        sendAlert(executionData, configuration)
         // return success.
         true
     }
     onsuccess {
-        triggerEvent(executionData, configuration)
+        sendAlert(executionData, configuration)
         true
     }
 
