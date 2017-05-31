@@ -1,18 +1,15 @@
-import com.dtolabs.rundeck.plugins.notification.NotificationPlugin;
-import com.dtolabs.rundeck.core.plugins.configuration.StringRenderingConstants;
-import com.dtolabs.rundeck.core.plugins.configuration.ValidationException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.dtolabs.rundeck.plugins.notification.NotificationPlugin
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 
 // See http://rundeck.org/docs/developer/notification-plugin-development.html
 
 /** See https://www.opsgenie.com/docs/web-api/alert-api#createAlertRequest
  * curl -XPOST 'https://api.opsgenie.com/v1/json/alert' \
- *    -d '{
- *      "apiKey": "eb243592-faa2-4ba2-a551q-1afdf565c889",
+ *    -d '{*      "apiKey": "eb243592-faa2-4ba2-a551q-1afdf565c889",
  *      "message" : "WebServer3 is down",
  *      "teams" : ["operations", "developers"]
- *    }'
+ *}'
  *
  *  Fields:
  * - teams	List of team names which will be responsible for the alert. Team escalation policies are run to calculate
@@ -38,7 +35,7 @@ import com.fasterxml.jackson.databind.JsonNode
  * - entity	The entity the alert is related to.	512 chars
  * - user	Default owner of the execution. If user is not specified, the system becomes owner of the execution. 100 chars
  * - note	Additional alert note
-*/
+ */
 
 class DEFAULTS {
     static String OPSGENIE_URL = "https://api.opsgenie.com/v1/json/alert"
@@ -54,26 +51,26 @@ class DEFAULTS {
 def render(text, binding) {
     //defines the set of tokens usable in the subject configuration property
     // See http://rundeck.org/docs/developer/notification-plugin.html#execution-data for more.
-    def tokens=[
-        '${job.status}': binding.execution.status.toUpperCase(),
-        '${job.project}': binding.execution.job.project,
-        '${job.name}': binding.execution.job.name,
-        '${job.group}': binding.execution.job.group,
-        '${job.user}': binding.execution.user,
-        '${job.href}': binding.execution.href,
-        '${job.execid}': binding.execution.id.toString(),
-        '${job.dateStartedUnixTime}': binding.execution.dateStartedUnixtime.toString(),
+    def tokens = [
+            '${job.status}'             : binding.execution.status.toUpperCase(),
+            '${job.project}'            : binding.execution.job.project,
+            '${job.name}'               : binding.execution.job.name,
+            '${job.group}'              : binding.execution.job.group,
+            '${job.user}'               : binding.execution.user,
+            '${job.href}'               : binding.execution.href,
+            '${job.execid}'             : binding.execution.id.toString(),
+            '${job.dateStartedUnixTime}': binding.execution.dateStartedUnixtime.toString(),
     ]
     if (text == null) {
-      null
+        null
     } else {
-      text.replaceAll(/(\$\{\S+?\})/){
-        if(tokens[it[1]]){
-	  tokens[it[1]]
-        } else {
-	  it[0]
+        text.replaceAll(/(\$\{\S+?\})/) {
+            if (tokens[it[1]]) {
+                tokens[it[1]]
+            } else {
+                it[0]
+            }
         }
-      }
     }
 }
 
@@ -83,29 +80,29 @@ def render(text, binding) {
  * @param configuration
  */
 def sendAlert(Map executionData, Map configuration) {
-    System.err.println("DEBUG: api_key="+configuration.api_key)
-    def expandedMessage = render(configuration.message, [execution:executionData])
-    def expandedDescription = render(configuration.description, [execution:executionData])
-    def expandedSource = render(configuration.source, [execution:executionData])
-    def expandedAlias = render(configuration.alias, [execution:executionData])
+    System.err.println("DEBUG: api_key=" + configuration.api_key)
+    def expandedMessage = render(configuration.message, [execution: executionData])
+    def expandedDescription = render(configuration.description, [execution: executionData])
+    def expandedSource = render(configuration.source, [execution: executionData])
+    def expandedAlias = render(configuration.alias, [execution: executionData])
     def job_data = [
-            apiKey: configuration.api_key,
-            message: expandedMessage,
+            apiKey     : configuration.api_key,
+            message    : expandedMessage,
             description: expandedDescription,
-            source: expandedSource,
-            alias: expandedAlias,
-            details:[
-                    job: executionData.job.name,
-                    group: executionData.job.group,
+            source     : expandedSource,
+            alias      : expandedAlias,
+            details    : [
+                    job        : executionData.job.name,
+                    group      : executionData.job.group,
                     description: executionData.job.description,
-                    project: executionData.job.project,
-                    user: executionData.user,
-                    status: executionData.status,
+                    project    : executionData.job.project,
+                    user       : executionData.user,
+                    status     : executionData.status,
             ]
     ]
     if (configuration.proxy_host != null && configuration.proxy_port != null) {
-        System.err.println("DEBUG: proxy_host="+configuration.proxy_host)
-        System.err.println("DEBUG: proxy_port="+configuration.proxy_port)
+        System.err.println("DEBUG: proxy_host=" + configuration.proxy_host)
+        System.err.println("DEBUG: proxy_port=" + configuration.proxy_port)
         System.getProperties().put("proxySet", "true")
         System.getProperties().put("proxyHost", configuration.proxy_host)
         System.getProperties().put("proxyPort", configuration.proxy_port)
@@ -128,34 +125,54 @@ def sendAlert(Map executionData, Map configuration) {
 
     // process the response.
     def response = connection.content.text
-    System.err.println("DEBUG: response: "+response)
-    JsonNode jsnode= json.readTree(response)
+    System.err.println("DEBUG: response: " + response)
+    JsonNode jsnode = json.readTree(response)
     def status = jsnode.get("status").asText()
-    if (! "success".equals(status)) {
+    if (!"success".equals(status)) {
         System.err.println("ERROR: OpsGenieNotification plugin status: " + status)
     }
 }
 
 
-rundeckPlugin(NotificationPlugin){
-    title="OpsGenie"
-    description="Create an alert."
-    configuration{
-        message title:"Message", description:"Message. Can contain \${job.status}, \${job.project}, \${job.name}, \${job.group}, \${job.user}, \${job.execid}", defaultValue:DEFAULTS.MESSAGE_TEMPLATE,required:true
+rundeckPlugin(NotificationPlugin) {
+    title = "OpsGenie"
+    description = "Create an alert."
+    configuration {
+        message title: "Message",
+                description: "Message. Can contain \${job.status}, \${job.project}, \${job.name}, \${job.group}, \${job.user}, \${job.execid}",
+                defaultValue: DEFAULTS.MESSAGE_TEMPLATE, required: true
 
-        description title:"Description", description:"Description.", defaultValue:DEFAULTS.DESCRIPTION_TEMPLATE,required:false
+        description title: "Description",
+                description: "Description.",
+                defaultValue: DEFAULTS.DESCRIPTION_TEMPLATE,
+                required: false
 
-        alias title:"Alias", description:"Alias.", defaultValue:DEFAULTS.ALIAS_TEMPLATE,required:false
+        alias title: "Alias",
+                description: "Alias.",
+                efaultValue: DEFAULTS.ALIAS_TEMPLATE,
+                required: false
 
-        source title:"Source", description:"Source.", defaultValue:DEFAULTS.SOURCE_TEMPLATE,required:false
+        source title: "Source",
+                description: "Source.",
+                defaultValue: DEFAULTS.SOURCE_TEMPLATE,
+                required: false
 
-        api_key title:"Integration API Key", description:"The API key", scope:"Project"
+        api_key title: "Integration API Key",
+                description: "The API key",
+                scope: "Project"
 
-        proxy_host title:"Proxy host", description:"Outbound proxy", scope:"Project", defaultValue:null, required:false
+        proxy_host title: "Proxy host", description: "Outbound proxy",
+                scope: "Project",
+                defaultValue: null,
+                required: false
 
-        proxy_port title:"Proxy port", description:"Outbound proxy port", scope:"Project", defaultValue:null, required:false
+        proxy_port title: "Proxy port",
+                description: "Outbound proxy port",
+                scope: "Project",
+                defaultValue: null,
+                required: false
     }
-    onstart { Map executionData,Map configuration ->
+    onstart { Map executionData, Map configuration ->
         sendAlert(executionData, configuration)
         true
     }
