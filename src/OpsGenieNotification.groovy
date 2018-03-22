@@ -40,7 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 class DEFAULTS {
     static String OPSGENIE_URL = "https://api.opsgenie.com/v1/json/alert"
     static String MESSAGE_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\"'
-    static String ALIAS_TEMPLATE = '${job.project}-${job.name}-${job.execid}-${job.dateStartedUnixTime}'
+    static String ALIAS_TEMPLATE = '${job.id}'
     static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [ ${job.href} ]'
     static String SOURCE_TEMPLATE = '${job.href}'
 }
@@ -149,7 +149,7 @@ rundeckPlugin(NotificationPlugin) {
 
         alias title: "Alias",
                 description: "Alias.",
-                efaultValue: DEFAULTS.ALIAS_TEMPLATE,
+                defaultValue: DEFAULTS.ALIAS_TEMPLATE,
                 required: false
 
         source title: "Source",
