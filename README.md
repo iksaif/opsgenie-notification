@@ -8,12 +8,16 @@ The plugin requires one parameter:
 
 Context variables usable in the subject line:
 
+* `${job.id}`: Job ID.
 * `${job.status}`: Job execution status (eg, FAILED, SUCCESS).
 * `${job.project}`: Job project name.
 * `${job.name}`: Job name.
 * `${job.group}`: Job group name.
-* `${job.user}`: User that executed the job.
+* `${job.username}`: User that executed the job.
+* `${job.user.email}`: Email address of user that executed the job.
 * `${job.execid}`: Job execution ID.
+* `${job.retryAttempt}`: Retry attempt number.
+* `${job.wasRetry}`: True if execution is retry.
 
 ## Installation
 
@@ -46,7 +50,7 @@ Or configure it at the instance level: $RDECK_BASE/etc/framework.properties
 |`api_key`|Any|None|Yes|Integration API Key|
 |`message`|Any|`${job.status} [${job.project}] \"${job.name}\"`|Yes|Message template.|
 |`description`|Any|`${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [${job.href}]`|No|Description template.|
-|`alias`|Any|`${job.project}-${job.name}-${job.execid}-${job.dateStartedUnixTime}`|No|alias template.|
+|`alias`|Any|`${job.id}`|No|alias template.|
 |`source`|Any|`${job.href}`|No|Source template.|
 |`proxy_host`|Project|None|Yes|Your egress proxy host.|
 |`proxy_port`|Project|None|If `proxy_host` is set|the port the network egress proxy accepts traffic on.|
