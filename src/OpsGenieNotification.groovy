@@ -6,12 +6,13 @@ import java.util.Scanner
 
 // See http://rundeck.org/docs/developer/notification-plugin-development.html
 
-/** See https://www.opsgenie.com/docs/web-api/alert-api#createAlertRequest
- * curl -XPOST 'https://api.opsgenie.com/v1/json/alert' \
- *    -d '{*      "apiKey": "eb243592-faa2-4ba2-a551q-1afdf565c889",
+/** See https://docs.opsgenie.com/docs/alert-api#section-create-alert
+ * curl -XPOST 'https://api.opsgenie.com/v2/alerts' \
+ *    --header 'Authorization: GenieKey 100a711f-eeca-4e23-b7a7-df8a3c8e3d03'
+ *    -d '{
  *      "message" : "WebServer3 is down",
  *      "teams" : ["operations", "developers"]
- *}'
+ *     }'
  *
  *  Fields:
  * - teams	List of team names which will be responsible for the alert. Team escalation policies are run to calculate
@@ -81,8 +82,7 @@ def render(text, binding) {
  * @param executionData
  * @param configuration
  */
-def sendAlert(Map executionData, Map configuration) {
-    System.err.println("DEBUG: api_key=" + configuration.api_key)
+def sendAlert(Map executionData, Map configuration, Boolean close = false) {
     def expandedMessage = render(configuration.message, [execution: executionData])
     def expandedDescription = render(configuration.description, [execution: executionData])
     def expandedSource = render(configuration.source, [execution: executionData])
@@ -111,6 +111,12 @@ def sendAlert(Map executionData, Map configuration) {
 
     // Send the request.
     def endpoint = DEFAULTS.OPSGENIE_URL;
+    if (close) {
+        // TODO: Alias needs url escaping
+        def encodedAlias = java.net.URLEncoder.encode(expandedAlias, "UTF-8")
+        endpoint += "/${encodedAlias}/close?identifierType=alias"
+        // TODO: Add auto-close note.
+    }
     def url = new URL(endpoint)
     def connection = url.openConnection()
     connection.setRequestMethod("POST")
@@ -121,7 +127,12 @@ def sendAlert(Map executionData, Map configuration) {
 
     def writer = new OutputStreamWriter(connection.outputStream)
     def json = new ObjectMapper()
-    def raw_data = json.writeValueAsString(job_data)
+    String raw_data = null
+    if (close) {
+        raw_data = json.writeValueAsString([note: "Auto closing as job has since succeeded"])
+    } else {
+        raw_data = json.writeValueAsString(job_data)
+    }
     System.err.println("DEBUG: request: " + raw_data)
     writer.write(raw_data)
     writer.flush()
@@ -185,11 +196,10 @@ rundeckPlugin(NotificationPlugin) {
     }
     onfailure { Map executionData, Map configuration ->
         sendAlert(executionData, configuration)
-        // return success.
         true
     }
-    onsuccess {
-        sendAlert(executionData, configuration)
+    onsuccess { Map executionData, Map configuration ->
+        sendAlert(executionData, configuration, true)
         true
     }
 
