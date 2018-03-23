@@ -1,6 +1,8 @@
 import com.dtolabs.rundeck.plugins.notification.NotificationPlugin
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.net.URL
+import java.util.Scanner
 
 // See http://rundeck.org/docs/developer/notification-plugin-development.html
 
@@ -38,7 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
  */
 
 class DEFAULTS {
-    static String OPSGENIE_URL = "https://api.opsgenie.com/v1/json/alert"
+    static String OPSGENIE_URL = 'https://api.opsgenie.com/v2/alerts'
     static String MESSAGE_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\"'
     static String ALIAS_TEMPLATE = '${job.id}'
     static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [ ${job.href} ]'
@@ -86,7 +88,6 @@ def sendAlert(Map executionData, Map configuration) {
     def expandedSource = render(configuration.source, [execution: executionData])
     def expandedAlias = render(configuration.alias, [execution: executionData])
     def job_data = [
-            apiKey     : configuration.api_key,
             message    : expandedMessage,
             description: expandedDescription,
             source     : expandedSource,
@@ -109,11 +110,15 @@ def sendAlert(Map executionData, Map configuration) {
     }
 
     // Send the request.
-    def url = new URL(DEFAULTS.OPSGENIE_URL)
+    def endpoint = DEFAULTS.OPSGENIE_URL;
+    def url = new URL(endpoint)
     def connection = url.openConnection()
     connection.setRequestMethod("POST")
-    connection.addRequestProperty("Content-type", "application/json")
+    connection.setRequestProperty("Content-Type", "application/json")
+    connection.setRequestProperty("Authorization", "GenieKey ${configuration.api_key}")
+    connection.setRequestProperty("Accept", "application/json")
     connection.doOutput = true
+
     def writer = new OutputStreamWriter(connection.outputStream)
     def json = new ObjectMapper()
     def raw_data = json.writeValueAsString(job_data)
@@ -124,12 +129,13 @@ def sendAlert(Map executionData, Map configuration) {
     connection.connect()
 
     // process the response.
-    def response = connection.content.text
-    System.err.println("DEBUG: response: " + response)
-    JsonNode jsnode = json.readTree(response)
-    def status = jsnode.get("status").asText()
-    if (!"success".equals(status)) {
-        System.err.println("ERROR: OpsGenieNotification plugin status: " + status)
+    int response_code = connection.getResponseCode()
+    if (response_code != 202) {
+        system.err.println("Unexpected response from OpsGenie API: ${response_code}")
+    }
+    def httpResponseScanner = new Scanner(connection.getInputStream())
+    while(httpResponseScanner.hasNextLine()) {
+        println(httpResponseScanner.nextLine())
     }
 }
 
@@ -140,7 +146,8 @@ rundeckPlugin(NotificationPlugin) {
     configuration {
         message title: "Message",
                 description: "Message. Can contain \${job.status}, \${job.project}, \${job.name}, \${job.group}, \${job.user}, \${job.execid}",
-                defaultValue: DEFAULTS.MESSAGE_TEMPLATE, required: true
+                defaultValue: DEFAULTS.MESSAGE_TEMPLATE,
+                required: true
 
         description title: "Description",
                 description: "Description.",
