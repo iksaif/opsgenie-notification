@@ -142,7 +142,7 @@ def sendAlert(Map executionData, Map configuration, Boolean close = false) {
     // process the response.
     int response_code = connection.getResponseCode()
     if (response_code != 202) {
-        system.err.println("Unexpected response from OpsGenie API: ${response_code}")
+        System.err.println("Unexpected response from OpsGenie API: ${response_code}")
     }
     def httpResponseScanner = new Scanner(connection.getInputStream())
     while(httpResponseScanner.hasNextLine()) {
