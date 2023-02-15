@@ -46,6 +46,7 @@ class DEFAULTS {
     static String ALIAS_TEMPLATE = '${job.id}'
     static String DESCRIPTION_TEMPLATE = '${job.status} [${job.project}] \"${job.name}\" run by ${job.user} (#${job.execid}) [ ${job.href} ]'
     static String SOURCE_TEMPLATE = '${job.href}'
+    static String PRIORITY_TEMPLATE = 'P3'
 }
 
 /**
@@ -87,11 +88,13 @@ def sendAlert(Map executionData, Map configuration, Boolean close = false) {
     def expandedDescription = render(configuration.description, [execution: executionData])
     def expandedSource = render(configuration.source, [execution: executionData])
     def expandedAlias = render(configuration.alias, [execution: executionData])
+    def expandedPriority = render(configuration.priority, [execution: executionData])
     def job_data = [
             message    : expandedMessage,
             description: expandedDescription,
             source     : expandedSource,
             alias      : expandedAlias,
+            priority   : expandedPriority,
             details    : [
                     job        : executionData.job.name,
                     group      : executionData.job.group,
@@ -168,6 +171,11 @@ rundeckPlugin(NotificationPlugin) {
         alias title: "Alias",
                 description: "Alias.",
                 defaultValue: DEFAULTS.ALIAS_TEMPLATE,
+                required: false
+
+        priority title: "Priority",
+                description: "Priority.",
+                defaultValue: DEFAULTS.PRIORITY_TEMPLATE,
                 required: false
 
         source title: "Source",
